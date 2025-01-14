@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "273442882910",
+    "project_id": "scrible-c8264",
+    "storage_bucket": "scrible-c8264.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:273442882910:android:366f074103553bc83ffbcf",
+        "android_client_info": {
+          "package_name": "com.redstar.scrible"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAaDfF1KmreZ1g4ttlpOhRZ5kahFYBV4iI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
