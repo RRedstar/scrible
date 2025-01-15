@@ -1,34 +1,58 @@
 import 'package:flutter/material.dart';
+import 'classes.dart';
 
 class DrawPainter extends CustomPainter {
-  Color linecolor;
-  double width;
-  List<List<Coord>> pathList;
+  final List<Color> colors = [
+    Colors.black,
+    Colors.yellow,
+    Colors.blue,
+    Colors.green,
+    Colors.red,
+    Colors.purple,
+    Colors.orange,
+    Colors.pink,
+    Colors.white
+  ];
 
-  DrawPainter({required this.linecolor, required this.width, required this.pathList});
+  List pathList;
+
+  DrawPainter(this.pathList);
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Parametrer paint
-    Paint paint = Paint()
-      ..color = linecolor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = width;
+    if (pathList.isNotEmpty){
+      // Draw paths
+      for (var instance in pathList) {
+        var path = instance is PathModel ? instance : instance.data();
 
-    // Draw paths
-    for (var path in pathList) {
-      Path pathToDraw = Path();
-      if (path.isNotEmpty) {
-        Coord start = path.first;
+        // Set paint parameters
+        Paint paint = Paint()
+          ..color = colors[path.color]
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = path.width;
+
+        // Create a new path and add the points from the current path to it
+        Path pathToDraw = Path();
+        List<Point> points = path.points;
+
+        if (points.isEmpty){
+          continue; // Skip this path if it has no points
+        }
+
+        // Move to the first point and draw a line to each subsequent point until the last point is reached
+        Point start = points.first;
         pathToDraw.moveTo(start.x, start.y);
 
-        for (var i = 1; i < path.length; i++) {
-          Coord point = path[i];
+        for (int i = 1; i < points.length; i++) {
+          // Get the current and next points
+          Point point = points[i];
           pathToDraw.lineTo(point.x, point.y);
-          // pathToDraw.moveTo(point.x, point.y);
         }
+
+        // Draw the path on the canvas
+        canvas.drawPath(pathToDraw, paint);
       }
-      canvas.drawPath(pathToDraw, paint);
+
     }
   }
 
@@ -36,10 +60,4 @@ class DrawPainter extends CustomPainter {
   bool shouldRepaint(CustomPainter oldDelegate) {
     return true;
   }
-}
-
-class Coord {
-  double x;
-  double y;
-  Coord(this.x, this.y);
 }
