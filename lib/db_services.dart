@@ -3,46 +3,50 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'classes.dart';
 
-const String _userCollection = "Path";
 
-class DatabaseService {
-  final _firestore = FirebaseFirestore.instance;
-  late final CollectionReference _pathRef;
+class DatabaseGeneralService<T extends JsonConvertible> {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final String collectionName;
 
-  DatabaseService() {
-    _pathRef = _firestore.collection(_userCollection).withConverter<PathModel>(
-      fromFirestore: (snapshots, _) => PathModel.fromJson(snapshots.data()!),
-      toFirestore: (path, _) => path.toJson()
+  late final CollectionReference<T> _pathRef;
+
+  DatabaseGeneralService({
+    required this.collectionName,
+    required T Function(Map<String, dynamic>) fromJson
+  }) {
+    _pathRef = _firestore.collection(collectionName).withConverter<T>(
+      fromFirestore: (snapshots, _) => fromJson(snapshots.data()!),
+      toFirestore: (data, _) => data.toJson(),
     );
   }
 
-  Stream<QuerySnapshot> getPath(){
+  Stream<QuerySnapshot<T>> getData() {
     return _pathRef.snapshots();
   }
 
-  void addPath(String pathId, PathModel path) async {
-    _pathRef.doc(pathId).set(path);
+  Future<void> addData(String docId, T data) async {
+    await _pathRef.doc(docId).set(data);
   }
 
-  void updatePath(String userId, PathModel path) async {
-    _pathRef.doc(userId).update(path.toJson());
+  Future<void> updateData(String userId, T data) async {
+    await _pathRef.doc(userId).update(data.toJson());
   }
 
-  void deletePath(String userId) async {
-    _pathRef.doc(userId).delete();
+  Future<void> deleteData(String userId) async {
+    await _pathRef.doc(userId).delete();
   }
 
-  void clearPath() async {
-    // Retrieve all documents in the collection
-    QuerySnapshot snapshot = await _pathRef.get();
+  Future<void> clearCollection(String roomId) async {
+    QuerySnapshot<T> snapshot = await _pathRef.get();
 
-    // Use a batch to delete documents
     WriteBatch batch = _firestore.batch();
-    for (DocumentSnapshot doc in snapshot.docs) {
-      batch.delete(doc.reference);
+    for (DocumentSnapshot<T> doc in snapshot.docs) {
+      if (doc.id.contains(roomId)){
+        batch.delete(doc.reference);
+      }
     }
 
-    // Commit the batch
     await batch.commit();
   }
 }
+
