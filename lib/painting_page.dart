@@ -1,22 +1,28 @@
 import 'package:flutter/material.dart';
-import 'package:scrible/db_services.dart';
-import 'package:scrible/painter.dart';
-import 'package:scrible/stream_page.dart';
+import 'package:train/db_services.dart';
+import 'package:train/painter.dart';
+import 'package:train/stream_page.dart';
 
 import 'classes.dart';
 
 class PaintPage extends StatefulWidget {
+  final String roomId;
+
+  const PaintPage({required this.roomId});
   @override
-  _PaintPageState createState() => _PaintPageState();
+  _PaintPageState createState() => _PaintPageState(roomId);
 }
 
 class _PaintPageState extends State<PaintPage> {
+
   late int _color = 0;
   late double _width = 5.0;
+  final String _roomId;
   late int _pathId = 0;
   late List<Point> _points;
   late List _pathList = [];
-  final DatabaseService _dbService = DatabaseService();
+  final DatabaseGeneralService _dbPath = DatabaseGeneralService<PathModel>(
+      collectionName: "Path", fromJson: PathModel.fromJson);
   final List<Color> _colors = [
     Colors.black,
     Colors.yellow,
@@ -29,9 +35,13 @@ class _PaintPageState extends State<PaintPage> {
     Colors.white
   ];
 
+  _PaintPageState(String this._roomId);
+
+
+
   @override
   void initState() {
-    _dbService.clearPath();
+    _dbPath.clearCollection(_roomId);
     super.initState();
   }
 
@@ -60,7 +70,7 @@ class _PaintPageState extends State<PaintPage> {
       width: _width,
       points: _points,
     );
-    _dbService.addPath("$_pathId", path);
+    _dbPath.addData('$_roomId-$_pathId', path);
   }
 
   _updateData(double x, double y) async {
@@ -72,11 +82,11 @@ class _PaintPageState extends State<PaintPage> {
       width: _width,
       points: _points,
     );
-    _dbService.updatePath("$_pathId", path);
+    _dbPath.updateData('$_roomId-$_pathId', path);
   }
 
   _clearPath() async {
-    _dbService.clearPath();
+    _dbPath.clearCollection(_roomId);
     setState(() {
       _pathList = [];
     });
@@ -84,8 +94,9 @@ class _PaintPageState extends State<PaintPage> {
 
   _undo() async {
     if (_pathList.isEmpty) return;
+    _dbPath.deleteData('$_roomId-$_pathId');
+
     _pathId--;
-    _dbService.deletePath('$_pathId');
 
     setState(() {
       _pathList.removeLast();
@@ -111,7 +122,8 @@ class _PaintPageState extends State<PaintPage> {
         ),
         body: Center(
             child: Column(mainAxisAlignment: MainAxisAlignment.end, children: [
-          GestureDetector(
+          Expanded(
+              child: GestureDetector(
             onPanDown: (details) {
               // _uploadData(details.localPosition.dx, details.localPosition.dy);
               _startDraw(details.localPosition.dx, details.localPosition.dy);
@@ -123,16 +135,16 @@ class _PaintPageState extends State<PaintPage> {
             onPanEnd: (details) => _uploadData(),
             child: Container(
                 width: MediaQuery.of(context).size.width,
-                height: MediaQuery.of(context).size.height - 260,
+                // height: MediaQuery.of(context).size.height - 260,
                 color: Colors.white,
                 child: CustomPaint(
                   painter: DrawPainter(_pathList),
                 )),
-          ),
+          )),
           Container(
               color: Colors.blue,
               child: Padding(
-                  padding: const EdgeInsets.fromLTRB(30, 5, 30, 35),
+                  padding: const EdgeInsets.fromLTRB(30, 0, 30, 30),
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
                     DrawingToolbar(),
                     Container(
@@ -151,23 +163,26 @@ class _PaintPageState extends State<PaintPage> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         IconButton(
-          icon: const Icon(Icons.undo),
+          selectedIcon: const Icon(Icons.access_alarm),
+          icon: const Icon(color: Colors.grey, Icons.undo),
           onPressed: () {
             _undo();
           },
           iconSize: 24,
         ),
         IconButton(
-          icon: const Icon(Icons.delete_forever),
+          icon: const Icon(color: Colors.grey, Icons.delete_forever),
           onPressed: () {
             _clearPath();
           },
           iconSize: 24,
         ),
         IconButton(
-          icon: const Icon(Icons.cleaning_services),
+          icon: Icon(
+              color: _color == 8 ? Colors.white : Colors.grey,
+              Icons.cleaning_services),
           onPressed: () {
-            _color = 0;
+            _color = 8;
             _width = 25;
           },
           iconSize: 24,
@@ -191,14 +206,14 @@ class _PaintPageState extends State<PaintPage> {
         DropdownButton(
           menuWidth: 50,
           dropdownColor: Colors.transparent,
-          icon: const Icon(Icons.circle),
+          icon: Icon(
+              color: _color != 8 ? Colors.white : Colors.grey, Icons.circle),
           onChanged: (value) {
             setState(() {
               _color = _color == 8 ? 0 : _color;
               _width = value!.toDouble();
             });
           },
-
           items: List.generate(
               5,
               (index) => DropdownMenuItem(
