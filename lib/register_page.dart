@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:scrible/db_services.dart';
+import 'package:train/db_services.dart';
 import 'package:uuid/uuid.dart';
 
 import 'classes.dart';
@@ -9,6 +9,7 @@ class RegisterPage extends StatelessWidget {
   final TextEditingController _nameController = TextEditingController();
   final DatabaseGeneralService _dbPlayer = DatabaseGeneralService<PlayerModel>(
       collectionName: 'Player', fromJson: PlayerModel.fromJson);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -72,7 +73,7 @@ class RegisterPage extends StatelessWidget {
 
                                 _dbPlayer.addData(playerId, newPlayer);
 
-                                Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomePage(playerId)));
+                                Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomePage(newPlayer)));
                               }
                             },
                             child: const Text("Enter"))

@@ -1,31 +1,66 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:scrible/db_services.dart';
-import 'package:scrible/painting_page.dart';
-import 'package:scrible/room_creation_page.dart';
-import 'package:scrible/stream_page.dart';
+import 'package:train/db_services.dart';
+import 'package:train/painting_page.dart';
+import 'package:train/room_creation_page.dart';
+import 'package:train/stream_page.dart';
 import 'classes.dart';
 
 class HomePage extends StatefulWidget {
-  String playerId;
+  PlayerModel player;
 
-  HomePage(this.playerId);
+  HomePage(this.player);
   @override
-  _HomePageState createState() => _HomePageState(playerId);
+  _HomePageState createState() => _HomePageState(player);
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   final DatabaseGeneralService _dbPlayer = DatabaseGeneralService<PlayerModel>(
       collectionName: 'Player', fromJson: PlayerModel.fromJson);
   final DatabaseGeneralService<RoomModel> _dbRoom = DatabaseGeneralService(
       collectionName: "Rooms", fromJson: RoomModel.fromJson);
 
-  String playerId;
+  PlayerModel player;
 
-  _HomePageState(String this.playerId);
-  
+  _HomePageState(PlayerModel this.player);
+
+  @override
+  initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Prend en charge la fermeture de l'app
+    switch (state) {
+      case AppLifecycleState.paused:
+        _dbPlayer.deleteData(player.id);
+        print('********* Paused');
+        break;
+
+      case AppLifecycleState.resumed:
+        _dbPlayer.addData(player.id, player);
+        print('********* Resumed');
+        break;
+
+      case AppLifecycleState.detached:
+        _dbPlayer.deleteData(player.id);
+        print('********* Detached');
+        break;
+
+      case AppLifecycleState.inactive:
+        _dbPlayer.deleteData(player.id);
+        print('********* Inactive');
+        break;
+
+      default:
+    }
+  }
+
+  @override
   void dispose() {
-    _dbPlayer.deleteData(playerId);
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
@@ -33,54 +68,64 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Redstar Scrible',),
+        title: const Text(
+          'Redstar train',
+        ),
       ),
       body: Center(
           child: Column(
         children: [
           const SizedBox(height: 20),
-          const Text('Available Rooms:', style: TextStyle(fontSize: 20,color: Colors.indigo,fontWeight: FontWeight.bold)),
+          const Text('Available Rooms:',
+              style: TextStyle(
+                  fontSize: 20,
+                  color: Colors.indigo,
+                  fontWeight: FontWeight.bold)),
           const SizedBox(height: 20),
+          Expanded(
+            child: Container(
+                width: MediaQuery.sizeOf(context).width - 40,
+                height: 400,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  color: Colors.black26,
+                ),
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: _dbRoom.getData(),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) {
+                      return Center(
+                        child: Container(
+                          height: 100,
+                          width: 100,
+                          child: const CircularProgressIndicator(),
+                        ),
+                      );
+                    }
+                    List<RoomModel> roomList = snapshot.data!.docs
+                        .map((doc) => doc.data() as RoomModel)
+                        .where((room) => !room.started)
+                        .toList();
 
-          Container(
-              width: MediaQuery.sizeOf(context).width - 40,
-              height: 400,
-              padding: EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                color: Colors.black26,
-              ),
-              child: StreamBuilder<QuerySnapshot>(
-                stream: _dbRoom.getData(),
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData) {
-                    return const CircularProgressIndicator();
-                  }
-                  List<RoomModel> roomList = snapshot.data!.docs
-                      .map((doc){
-                    RoomModel r = doc.data() as RoomModel;
-                    // Récupérer l'id du document et mettre a jour celui du RoomModel
-                    return r;
-                  } )
-                      .toList();
-
-                  return ListView.builder(
-                    itemCount: roomList.length,
-                    itemBuilder: (context, index) {
-                      return RoomTile(roomList[index]);
-                    },
-                  );
-                },
-              )),
-
+                    return ListView.builder(
+                      itemCount: roomList.length,
+                      itemBuilder: (context, index) {
+                        return RoomTile(roomList[index]);
+                      },
+                    );
+                  },
+                )),
+          ),
           const SizedBox(height: 20),
-
           OutlinedButton(
               onPressed: () {
+                WidgetsBinding.instance.removeObserver(this);
                 Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => RoomCreationPage()));
+                    builder: (context) => RoomCreationPage(player.id)));
               },
               child: const Text('Create Room')),
+          const SizedBox(height: 30)
         ],
       )),
     );
@@ -88,25 +133,23 @@ class _HomePageState extends State<HomePage> {
 
   Card RoomTile(RoomModel room) {
     return Card(
-      child: ListTile(
-        leading: CircleAvatar(
-          child: Text(room.language),
-        ),
-        title: Text(room.roomName),
-        subtitle: Text('${room.nbUser}/${room.nbMaxUser}'),
-        trailing: IconButton(
-          icon: const Icon(Icons.open_in_browser),
-          onPressed: () {
-            Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) => StreamPage(roomId: room.id)));
-          },
-        ),
-        onTap: () {
+        child: ListTile(
+      leading: CircleAvatar(
+        child: Text(room.language),
+      ),
+      title: Text(room.roomName),
+      subtitle: Text('${room.players.length}/${room.nbMaxPlayer}'),
+      trailing: IconButton(
+        icon: const Icon(Icons.open_in_browser),
+        onPressed: () {
           Navigator.of(context).push(MaterialPageRoute(
-              builder: (context) => PaintPage(roomId: room.id)));
+              builder: (context) => StreamPage(roomId: room.id)));
         },
-      )
-    );
+      ),
+      onTap: () {
+        Navigator.of(context).push(MaterialPageRoute(
+            builder: (context) => PaintPage(roomId: room.id)));
+      },
+    ));
   }
 }
-

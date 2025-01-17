@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:scrible/db_services.dart';
-import 'package:scrible/painter.dart';
-import 'package:scrible/stream_page.dart';
+import 'package:train/db_services.dart';
+import 'package:train/painter.dart';
+import 'package:train/stream_page.dart';
 
 import 'classes.dart';
 
@@ -37,8 +37,6 @@ class _PaintPageState extends State<PaintPage> {
 
   _PaintPageState(String this._roomId);
 
-
-
   @override
   void initState() {
     _dbPath.clearCollection(_roomId);
@@ -73,18 +71,6 @@ class _PaintPageState extends State<PaintPage> {
     _dbPath.addData('$_roomId-$_pathId', path);
   }
 
-  _updateData(double x, double y) async {
-    _points.add(Point(x, y));
-
-    PathModel path = PathModel(
-      id: "$_pathId",
-      color: _color,
-      width: _width,
-      points: _points,
-    );
-    _dbPath.updateData('$_roomId-$_pathId', path);
-  }
-
   _clearPath() async {
     _dbPath.clearCollection(_roomId);
     setState(() {
@@ -112,8 +98,6 @@ class _PaintPageState extends State<PaintPage> {
             IconButton(
               icon: const Icon(Icons.delete_forever_sharp),
               onPressed: () {
-                // Navigator.of(context).push(
-                //     MaterialPageRoute(builder: (context) => StreamPage()));
                 _clearPath();
               },
             )
@@ -125,17 +109,14 @@ class _PaintPageState extends State<PaintPage> {
           Expanded(
               child: GestureDetector(
             onPanDown: (details) {
-              // _uploadData(details.localPosition.dx, details.localPosition.dy);
               _startDraw(details.localPosition.dx, details.localPosition.dy);
             },
             onPanUpdate: (details) {
-              // _updateData(details.localPosition.dx, details.localPosition.dy);
               _updateDraw(details.localPosition.dx, details.localPosition.dy);
             },
             onPanEnd: (details) => _uploadData(),
             child: Container(
                 width: MediaQuery.of(context).size.width,
-                // height: MediaQuery.of(context).size.height - 260,
                 color: Colors.white,
                 child: CustomPaint(
                   painter: DrawPainter(_pathList),

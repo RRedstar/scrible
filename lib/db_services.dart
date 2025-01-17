@@ -36,17 +36,21 @@ class DatabaseGeneralService<T extends JsonConvertible> {
     await _pathRef.doc(userId).delete();
   }
 
-  Future<void> clearCollection(String roomId) async {
+  Future<void> clearCollection(String dataId) async {
     QuerySnapshot<T> snapshot = await _pathRef.get();
 
     WriteBatch batch = _firestore.batch();
     for (DocumentSnapshot<T> doc in snapshot.docs) {
-      if (doc.id.contains(roomId)){
+      if (doc.id.contains(dataId)){
         batch.delete(doc.reference);
       }
     }
 
     await batch.commit();
+  }
+
+  Future<DocumentReference> getDocument(String docId) async {
+    return await _pathRef.doc(docId);
   }
 }
 

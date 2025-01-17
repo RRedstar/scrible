@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:scrible/db_services.dart';
-import 'package:scrible/painter.dart';
+import 'package:train/db_services.dart';
+import 'package:train/painter.dart';
 
 import 'classes.dart';
 

@@ -48,30 +48,33 @@ class RoomModel extends JsonConvertible {
   late final String id;
   final String roomName;
   final String language;
-  final int nbMaxUser;
+  final int nbMaxPlayer;
   final int nbRound;
-  final int nbUser;
   final int time;
+  late final bool started;
+  final List players;
 
   RoomModel(
       {required this.id,
       required this.roomName,
       required this.language,
-      required this.nbMaxUser,
+      required this.nbMaxPlayer,
       required this.nbRound,
-      required this.nbUser,
-      required this.time});
+      required this.time,
+      required  this.started,
+      required  this.players,});
 
   @override
   Map<String, Object?> toJson() {
     return {
       "id": id,
       "language": language,
-      "nbMaxUser": nbMaxUser,
+      "nbMaxPlayer": nbMaxPlayer,
       "nbRound": nbRound,
-      "nbUser": nbUser,
       "roomName": roomName,
       "time": time,
+      "started": started,
+      "players": players,
     };
   }
 
@@ -80,17 +83,18 @@ class RoomModel extends JsonConvertible {
           id: json['id'] as String,
           roomName: json['roomName'] as String,
           language: json['language'] as String,
-          nbMaxUser: json['nbMaxUser'] as int,
+          nbMaxPlayer: json['nbMaxPlayer'] as int,
           nbRound: json['nbRound'] as int,
-          nbUser: json['nbUser'] as int,
           time: json['time'] as int,
+          started: json['started'] as bool,
+          players: json['players'] as List,
         );
 }
 
 class PlayerModel extends JsonConvertible {
   late final String id;
   final String name;
-  final String roomId;
+  String roomId;
   final int score;
 
   PlayerModel(
